@@ -63,8 +63,6 @@ class PyGd2(object):
 
     def get_stats(self, player_name, year, stats = []):
         result = {}
-        print("HERE")
-        print(player_name, year, stats)
         player_id = self.__get_player_id(player_name)
         raw = self.__get_player_stats(player_id, year)
         data = raw['sport_hitting_composed']['sport_hitting_agg']['queryResults']['row'] # TODO grab career and projected too
@@ -77,8 +75,9 @@ class PyGd2(object):
             season = data
         else:
             return result
+        stats = [x.lower for x in stats]
         for key, value in season.items():
-            if key in stats:
+            if key.lower in stats:
                 result[key] = value
         return result
 

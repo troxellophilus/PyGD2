@@ -63,14 +63,20 @@ class PyGd2(object):
 
     def get_stats(self, player_name, year, stats = []):
         result = {}
+        print("HERE")
+        print(player_name, year, stats)
         player_id = self.__get_player_id(player_name)
         raw = self.__get_player_stats(player_id, year)
         data = raw['sport_hitting_composed']['sport_hitting_agg']['queryResults']['row'] # TODO grab career and projected too
         season = {}
         if isinstance(data, list):
             for group in data:
-                if int(group['season']) == year:
+                if int(group['season']) == int(year):
                     season = group
+        elif isinstance(data, dict):
+            season = data
+        else:
+            return result
         for key, value in season.items():
             if key in stats:
                 result[key] = value
@@ -93,7 +99,7 @@ class PyGd2(object):
 
 def main():
     gd = PyGd2()
-    #gd.update_players()
+    gd.update_players()
 
     print(gd.get_stats('Andre Ethier', 2014, ["hr", "gidp", "avg", "slg"]))
     print(gd.get_stats('Andre Ethier', 2015, ["hr", "gidp", "avg", "slg"]))

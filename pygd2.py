@@ -16,16 +16,15 @@ class PyGd2(object):
         self.db.row_factory = sqlite3.Row
         self.cursor = self.db.cursor()
 
-    def update_players(self):
+    def update_players(self, date):
         # update the database players, only run every so often
-        for pname, pid in self.__get_players().items():
+        for pname, pid in self.__get_players(date).items():
             self.__upsert_player(pname, pid)
         self.db.commit()
 
-    def __get_players(self):
+    def __get_players(self, today):
         players = {} # to be filled w/ player_name -> player_id mappings
         # build the gd2 date dir url and request its source
-        today = datetime.today()
         gd_date = self.GD_DATE_FMT.format(today.year, today.month, today.day)
         print(self.GD_PREFIX + gd_date)
         response = requests.get(self.GD_PREFIX + gd_date)
@@ -57,13 +56,16 @@ class PyGd2(object):
 
     def __upsert_player(self, pname, pid):
         query = "INSERT OR IGNORE INTO players VALUES (?, ?)"
-        self.cursor.execute(query, (pname, pid))
+        self.cursor.execute(query, (pname.lower(), pid))
         query = "UPDATE players SET id=? WHERE name=?"
-        self.cursor.execute(query, (pid, pname))
+        self.cursor.execute(query, (pid, pname.lower()))
 
     def get_stats(self, player_name, year, stats = []):
         result = {}
-        player_id = self.__get_player_id(player_name)
+        player_id = self.__get_player_id(player_name.lower())
+        if not player_id:
+            print("Could not find player id.")
+            return result
         raw = self.__get_player_stats(player_id, year)
         data = raw['sport_hitting_composed']['sport_hitting_agg']['queryResults']['row'] # TODO grab career and projected too
         season = {}
@@ -75,9 +77,9 @@ class PyGd2(object):
             season = data
         else:
             return result
-        stats = [x.lower for x in stats]
+        stats = [x.lower() for x in stats]
         for key, value in season.items():
-            if key.lower in stats:
+            if key.lower() in stats:
                 result[key] = value
         return result
 
@@ -87,7 +89,9 @@ class PyGd2(object):
     def __get_player_id(self, player_name):
         query = "SELECT * FROM players WHERE name=?"
         row = self.cursor.execute(query, (player_name,)).fetchone()
-        return row['id']
+        if row:
+            return row['id']
+        return False
 
     def __get_player_stats(self, player_id, year):
         response = requests.get(self.STAT_FMT.format(player_id, year))
@@ -98,7 +102,7 @@ class PyGd2(object):
 
 def main():
     gd = PyGd2()
-    gd.update_players()
+    gd.update_players(datetime(2015, 9, 23))
 
     print(gd.get_stats('Andre Ethier', 2014, ["hr", "gidp", "avg", "slg"]))
     print(gd.get_stats('Andre Ethier', 2015, ["hr", "gidp", "avg", "slg"]))

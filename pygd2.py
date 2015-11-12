@@ -132,6 +132,9 @@ class PyGd2(object):
 
 def main():
     gd = PyGd2()
+    gd.update_players(datetime(2011, 9, 23))
+    gd.update_players(datetime(2013, 9, 23))
+    gd.update_players(datetime(2015, 9, 23))
 
     print("Andre Ethier 2015: " + str(gd.get_stats('Andre Ethier', 2015, ["hr", "gidp", "avg", "slg"])))
     print("Clayton Kershaw 2015: " + str(gd.get_stats('Clayton Kershaw', 2015, ["k", "whip", "avg", "era"])))

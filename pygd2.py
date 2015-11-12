@@ -3,14 +3,13 @@
 import sqlite3
 import requests
 import xml.etree.ElementTree as ET
-from datetime import datetime
 from bs4 import BeautifulSoup
 
 class PyGd2(object):
     def __init__(self):
         self.GD_PREFIX = "http://gd2.mlb.com/components/game/mlb/"
         self.GD_DATE_FMT = "year_{}/month_{:02d}/day_{:02d}/"
-        self.STAT_FMT = "http://m.mlb.com/lookup/json/named.sport_hitting_composed.bam?game_type=%27R%27&league_list_id=%27mlb%27&sort_by=%27season_asc%27&player_id={}&sport_hitting_composed.season={}"
+        self.STAT_FMT = "http://m.mlb.com/lookup/json/named.sport_{}_composed.bam?game_type=%27R%27&league_list_id=%27mlb%27&sort_by=%27season_asc%27&player_id={}&sport_hitting_composed.season={}"
 
         self.db = sqlite3.connect('pygd2.db')
         self.db.row_factory = sqlite3.Row
@@ -60,31 +59,41 @@ class PyGd2(object):
         query = "UPDATE players SET id=? WHERE name=?"
         self.cursor.execute(query, (pid, pname.lower()))
 
-    def get_stats(self, player_name, year, stats = []):
+    def __process_data(self, data, year, stats):
+        buf = {}
+        res = {}
+        if isinstance(data, list):
+            for group in data:
+                if int(group['season']) == int(year):
+                    buf = group
+        elif isinstance(data, dict):
+            buf = data
+        else:
+            return res
+        for key, value in buf.items():
+            if key.lower() in stats:
+                res[key] = value
+        return res
+
+    def get_stats(self, player_name, year, stats):
         result = {}
         player_id = self.__get_player_id(player_name.lower())
         if not player_id:
             print("Could not find player id.")
             return result
-        raw = self.__get_player_stats(player_id, year)
-        data = raw['sport_hitting_composed']['sport_hitting_agg']['queryResults']['row'] # TODO grab career and projected too
-        season = {}
-        if isinstance(data, list):
-            for group in data:
-                if int(group['season']) == int(year):
-                    season = group
-        elif isinstance(data, dict):
-            season = data
-        else:
-            return result
+        raw_h, raw_p = self.__get_player_stats(player_id, year)
+        data_h = raw_h['sport_hitting_composed']['sport_hitting_agg']['queryResults'] # TODO grab career and projected too
+        data_p = raw_p['sport_pitching_composed']['sport_pitching_agg']['queryResults']
         stats = [x.lower() for x in stats]
-        for key, value in season.items():
-            if key.lower() in stats:
-                result[key] = value
-        return result
-
-    def get_formatted_stats(self, player_name, year, stats = []):
-        return
+        if 'row' in data_h.keys():
+            season_h = self.__process_data(data_h['row'], year, stats)
+        else:
+            season_h = {}
+        if 'row' in data_p.keys():
+            season_p = self.__process_data(data_p['row'], year, stats)
+        else:
+            season_p = {}
+        return season_h, season_p
 
     def __get_player_id(self, player_name):
         query = "SELECT * FROM players WHERE name=?"
@@ -94,10 +103,15 @@ class PyGd2(object):
         return False
 
     def __get_player_stats(self, player_id, year):
-        response = requests.get(self.STAT_FMT.format(player_id, year))
+        response = requests.get(self.STAT_FMT.format("hitting", player_id, year))
         if response.status_code != requests.codes.ok:
             return
-        return response.json()
+        hitting = response.json()
+        response = requests.get(self.STAT_FMT.format("pitching", player_id, year))
+        if response.status_code != requests.codes.ok:
+            return
+        pitching = response.json()
+        return hitting, pitching
 
 
 def main():
@@ -106,8 +120,8 @@ def main():
     gd.update_players(datetime(2013, 9, 23))
     gd.update_players(datetime(2015, 9, 23))
 
-    print(gd.get_stats('Andre Ethier', 2014, ["hr", "gidp", "avg", "slg"]))
-    print(gd.get_stats('Andre Ethier', 2015, ["hr", "gidp", "avg", "slg"]))
+    print("Andre Ethier 2015: " + str(gd.get_stats('Andre Ethier', 2015, ["hr", "gidp", "avg", "slg"])))
+    print("Clayton Kershaw 2015: " + str(gd.get_stats('Clayton Kershaw', 2015, ["k", "whip", "avg", "era"])))
 
 if __name__ == '__main__':
     main()

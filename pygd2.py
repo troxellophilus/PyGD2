@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sqlite3
 import requests
 from datetime import datetime
+import time
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 
@@ -36,6 +37,7 @@ class PyGd2(object):
         # update the database players, only run every so often
         for pname, pid in self.__get_players(date).items():
             self.__upsert_player(pname, pid)
+            time.sleep(2)
         self.db.commit()
 
     def __get_players(self, today):
@@ -54,6 +56,7 @@ class PyGd2(object):
                 xml = self.GD_PREFIX + gd_date + href + "players.xml"
                 print(xml)
                 players.update(self.__process_players_xml(xml))
+            time.sleep(2)
 
         # return as dictionary
         return players

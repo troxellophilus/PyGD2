@@ -1,4 +1,5 @@
-from peewee import SqliteDatabase, Model, BaseModel, TextField, DateTimeField
+from peewee import SqliteDatabase, Model, BaseModel, TextField, \
+        DateTimeField, IntegerField, CharField, ForeignKeyField, CompositeKey
 
 
 database = SqliteDatabase('pygd2.db')
@@ -9,26 +10,23 @@ class BaseModel(Model):
         database = database
 
 
+class Team(BaseModel):
+    gdid = TextField(primary_key=True)
+    abbrev = TextField(unique=True)
+
+
 class Player(BaseModel):
-    firstname = TextField()
-    lastname = TextField()
-    gdid = TextField(unique=True)
-    number = IntegerField(index=True)
-    boxname = TextField()
-    throws = CharField(index=True)
-    bats = CharField(index=True)
+    gdid = TextField(primary_key=True)
+    firstname = TextField(index=True)
+    lastname = TextField(index=True)
+    number = CharField()
+    boxname = TextField(index=True)
+    throws = CharField()
+    bats = CharField()
     position = CharField(index=True)
     status = CharField()
     team = ForeignKeyField(Team, related_name='players')
     date_modified = DateTimeField()
-    
-    class Meta:
-        primary_key = CompositeKey('lastname', 'firstname')
-
-
-class Team(BaseModel):
-    gdid = TextField(unique=True)
-    abbrev = TextField(unique=True)
 
 
 def open():
@@ -40,4 +38,4 @@ def close():
     database.close()
 
 
-database.create_tables([Player], safe=True)
+database.create_tables([Player, Team], safe=True)

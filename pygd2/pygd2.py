@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+
 """Copyright (C) 2015  Drew Troxell
 
 This program is free software: you can redistribute it and/or modify
@@ -30,8 +31,8 @@ import db
 
 
 # Configure logger
-FORMAT = '%(levelname)s %(asctime)s %(module)s <%(lineno)d> %(message)s'
-logging.basicConfig(format=FORMAT)
+LOG_FMT = '%(levelname)s %(asctime)s %(module)s <%(lineno)d> %(message)s'
+logging.basicConfig(format=LOG_FMT)
 LOG = logging.getLogger('com.troxellophilus.pygd2')
 
 
@@ -40,7 +41,7 @@ GD_URL_PRE = "http://gd2.mlb.com/components/game/mlb/"
 GD_DATE_FMT = "year_{}/month_{:02}/day_{:02d}/"
 
 M_URL_PRE = "http://m.mlb.com/lookup/json/"
-M_STAT_FMT = "named.sport_{}_composed.bam?player_id={}}&game_type=%27R%27&league_list_id=%27mlb%27&season={}"
+M_STAT_FMT = "named.sport_{}_composed.bam?player_id={}&game_type=%27R%27&league_list_id=%27mlb%27&season={}"
 
 
 # Set randomized delay range in seconds
@@ -131,27 +132,32 @@ def get_player_attribs(url):
     xml = get_xml(url)
     if xml is None:
         return []
-    return [player.attrib for player in xml.iter('player')]:
+    return [player.attrib for player in xml.iter('player')]
 
 
-def update_gameday_ids(date = None):
+def update_gameday_ids(year, month, day):
     """Updates the database players table w/ gameday ids from a given date.
     Args:
         date: Date to get gameday ids from (today if empty).
     Returns:
         List of the player objects updated in the database.
     """
+    date = None
+    try:
+        date = datetime(year, month, day)
+    except ValueError:
+        date = datetime.today()
     players_xml_urls = get_players_xml_urls(date)
     db.open()
-    created = []
+    updated = []
     for url in players_xml_urls:
         players = get_player_attribs(url)
         for player in players:
-            for_team = db.Team.get_or_create(
-                id=player['team_id'],
+            for_team = db.Team.create_or_get(
+                gdid=player['team_id'],
                 abbrev=player['team_abbrev']
             )
-            db_player, created = db.Player.get_or_create(
+            db_player, created = db.Player.create_or_get(
                 firstname=player['first'],
                 lastname=player['last'],
                 gdid=player['id'],
@@ -162,15 +168,19 @@ def update_gameday_ids(date = None):
                 position=player['position'],
                 status=player['status'],
                 team=for_team,
-                date_modified=datetime.today()
+                date_modified=datetime.now()
             )
             if not created:
                 db_player.gdid = player['id']
-                db_player.date_modified = datetime.today()
+                db_player.number = player['num']
+                db_player.position = player['position']
+                db_player.status = player['status']
+                db_player.team = for_team
+                db_player.date_modified = datetime.now()
                 db_player.save()
-            created.append(db_player)
+            updated.append(db_player)
     db.close()
-    return created
+    return updated
 
 
 def get_player_stats(type='hitting', player_id='', year=datetime.today().year):
@@ -189,7 +199,7 @@ def get_player_stats(type='hitting', player_id='', year=datetime.today().year):
     idx_composed = 'sport_{}_composed'.format(type)
     idx_agg = 'sport_{}_agg'.format(type)
     data = json[idx_composed][idx_agg]['queryResults']
-    if data['totalSize'] == 1: # TODO multi year in one request
+    if data['totalSize'] is '1': # TODO multi year in one request
         return data['row']
     return {}
 
@@ -228,8 +238,8 @@ def get_pitching_stats_by_name(first, last, year, stats=[]): # TODO default stat
     stats_lower = [s.lower() for s in stats]
     found_stats = {}
     for abbrev, value in player_stats.items():
-        if stat_abbrev.lower() in stats_lower:
-            found_stats[abbrev] = value
+        if abbrev.lower() in stats_lower:
+            found_stats[abbrev.upper()] = value
     return found_stats
 
 
@@ -249,6 +259,6 @@ def get_batting_stats_by_name(first, last, year, stats=[]): # TODO default stats
     stats_lower = [s.lower() for s in stats]
     found_stats = {}
     for abbrev, value in player_stats.items():
-        if stat_abbrev.lower() in stats_lower:
-            found_stats[abbrev] = value
+        if abbrev.lower() in stats_lower:
+            found_stats[abbrev.upper()] = value
     return found_stats

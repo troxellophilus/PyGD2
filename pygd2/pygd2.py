@@ -221,6 +221,23 @@ def get_player_by_name(first, last):
         return player
 
 
+def get_player_stats_by_name(first, last, year):
+    """Gets player stats for a year.
+    Args:
+        first: Player's first name.
+        last: Player's last name (Scott Van Slyke -> last="Van Slyke")
+        year: Season to get stats for.
+    Returns:
+        Dictionary of form {"stat_abbrev":"value"}
+    """
+    player = get_player_by_name(first, last)
+    if player is None:
+        return {}
+    if player.position is 'P':
+        return get_player_stats('pitching', player.gdid, year)
+    return get_player_stats('hitting', player.gdid, year)
+
+
 def get_pitching_stats_by_name(first, last, year, stats=[]): # TODO default stats
     """Gets a player's pitching stats by name.
     Args:
@@ -246,7 +263,8 @@ def get_pitching_stats_by_name(first, last, year, stats=[]): # TODO default stat
 def get_batting_stats_by_name(first, last, year, stats=[]): # TODO default stats
     """Gets a player's hitting stats by name.
     Args:
-        player_id: Gameday id of the player.
+        first: First name of the player.
+        last: Last name of the player (Scott Van Slyke -> last="Van Slyke")
         year: Season to get stats from.
         stats: List of stat abbreviations.
     Returns:

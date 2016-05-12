@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
 import logging
 import random
+import re
 import time
 import xml.etree.ElementTree as ET
 
@@ -122,6 +123,44 @@ def get_players_xml_urls(date):
     return players
 
 
+def get_game_attribs(date, team):
+    """Gets game.xml attributes for a date and team.
+    Args:
+        date: Date to run against.
+        team: Team abbreviation.
+    Returns:
+        List of game_attribs
+    """
+    if date is None:
+        date = datetime.today()
+    gd_date = GD_DATE_FMT.format(date.year, date.month, date.day)
+    soup = get_soup(GD_URL_PRE + gd_date)
+    if soup is None:
+        return []
+    game_attribs = []
+    regex = r"gid_\d+_\d+_\d+_(\w+)mlb_(\w+)mlb_1/"
+    for link in soup.find_all('a'):
+        href = link.get('href')
+        res = re.match(regex, href)
+        if team in res.group(1) or team in res.group(2):
+            xml_url = GD_URL_PRE + gd_date + href + "game.xml"
+            xml = get_xml(xml_url)
+            if xml:
+                game_attribs.append(xml.attrib)
+    return game_attribs
+
+
+def get_color_feed(game_pk):
+    """Gets color feed for a game.
+    Args:
+        game_pk: game_pk of game to get feed for.
+    Returns:
+        Parsed JSON feed.
+    """
+    url = "http://statsapi.mlb.com/api/v1/game/%s/feed/color.json" % str(game_pk)
+    return get_json(url)
+
+
 def get_player_attribs(url):
     """Gets a list of player attribute dicts from a players.xml file.
     Args:
@@ -214,6 +253,22 @@ def get_player_by_name(first, last):
     """
     try:
         player = db.Player.get(firstname=first, lastname=last)
+    except db.Player.DoesNotExist:
+        LOG.error("Player not in database.")
+        return None
+    else:
+        return player
+
+
+def get_player_by_id(player_id):
+    """Gets a player from the database.
+    Args:
+        player_id: The player's id.
+    Returns:
+        The Player, or None if player isn't in the database.
+    """
+    try:
+        player = db.Player.get(gdid=player_id)
     except db.Player.DoesNotExist:
         LOG.error("Player not in database.")
         return None

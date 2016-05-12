@@ -13,12 +13,12 @@ setup(
     license = "GPLv3",
     keywords = "mlb gameday stats library",
     url = "http://github.com/DrewTroxell/PyGD2",
-    install_requires([
+    install_requires=[
         "beautifulsoup4",
         "requests"
-    ])
-    packages=find_packages(),
-    long_description=read('README'),
+    ],
+    packages=["pygd2"],
+    long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",

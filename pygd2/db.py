@@ -1,5 +1,4 @@
-from peewee import SqliteDatabase, Model, BaseModel, TextField, \
-        DateTimeField, IntegerField, CharField, ForeignKeyField, CompositeKey
+from peewee import *
 
 
 database = SqliteDatabase('pygd2.db')
@@ -29,11 +28,11 @@ class Player(BaseModel):
     date_modified = DateTimeField()
 
 
-def open():
+def opendb():
     database.connect()
 
 
-def close():
+def closedb():
     database.commit()
     database.close()
 

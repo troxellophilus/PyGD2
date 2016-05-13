@@ -28,7 +28,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 import requests
 
-import db
+from pygd2 import db
 
 
 # Configure logger
@@ -187,7 +187,7 @@ def update_gameday_ids(year, month, day):
     except ValueError:
         date = datetime.today()
     players_xml_urls = get_players_xml_urls(date)
-    db.open()
+    db.opendb()
     updated = []
     for url in players_xml_urls:
         players = get_player_attribs(url)
@@ -218,7 +218,7 @@ def update_gameday_ids(year, month, day):
                 db_player.date_modified = datetime.now()
                 db_player.save()
             updated.append(db_player)
-    db.close()
+    db.closedb()
     return updated
 
 

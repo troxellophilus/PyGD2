@@ -142,7 +142,7 @@ def get_game_attribs(date, team):
     for link in soup.find_all('a'):
         href = link.get('href')
         res = re.match(regex, href)
-        if team in res.group(1) or team in res.group(2):
+        if res and (team in res.group(1) or team in res.group(2)):
             xml_url = GD_URL_PRE + gd_date + href + "game.xml"
             xml = get_xml(xml_url)
             if xml:

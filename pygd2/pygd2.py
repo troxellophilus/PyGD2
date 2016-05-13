@@ -66,7 +66,7 @@ def get_xml(url):
     delay_fuzzy()
     response = requests.get(url)
     if response.status_code != requests.codes.ok:
-        LOG.error("Request to {}: status {}".format(url, response.status_code))
+        LOG.error("Request to %s: status %s", url, response.status_code)
         return None
     return ET.fromstring(response.text)
 
@@ -81,7 +81,7 @@ def get_json(url):
     delay_fuzzy()
     response = requests.get(url)
     if response.status_code != requests.codes.ok:
-        LOG.error("Request to {}: status {}".format(url, response.status_code))
+        LOG.error("Request to %s: status %s", url, response.status_code)
         return None
     return response.json()
 
@@ -96,7 +96,7 @@ def get_soup(url):
     delay_fuzzy()
     response = requests.get(url)
     if response.status_code != requests.codes.ok:
-        LOG.error("Request to {}: status {}".format(url, response.status_code))
+        LOG.error("Request to %s: status %s", url, response.status_code)
         return None
     return BeautifulSoup(response.text, 'html.parser')
 

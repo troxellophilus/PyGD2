@@ -26,6 +26,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from bs4 import BeautifulSoup
+from pytz import timezone
 import requests
 
 from pygd2 import db
@@ -132,7 +133,8 @@ def get_game_attribs(date, team):
         List of game_attribs
     """
     if date is None:
-        date = datetime.today()
+        pacific = timezone('US/Pacific')
+        date = datetime.now() + pacific.localize(datetime.now()).utcoffset()
     gd_date = GD_DATE_FMT.format(date.year, date.month, date.day)
     soup = get_soup(GD_URL_PRE + gd_date)
     if soup is None:

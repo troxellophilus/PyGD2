@@ -86,7 +86,7 @@ def get_json(url):
     if response.status_code != requests.codes.ok:
         LOG.error("Request to %s: status %s", url, response.status_code)
         return None
-    LOG.debug("Received data: %s", response.text[100:])
+    LOG.debug("Received data: %s", response.text[:100])
     return response.json()
 
 

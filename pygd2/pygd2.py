@@ -65,6 +65,7 @@ def get_xml(url):
         ElementTree of the XML file, or None
     """
     delay_fuzzy()
+    LOG.debug("Request to xml URL: %s", url)
     response = requests.get(url)
     if response.status_code != requests.codes.ok:
         LOG.error("Request to %s: status %s", url, response.status_code)
@@ -80,10 +81,12 @@ def get_json(url):
         json of the JSON response, or none.
     """
     delay_fuzzy()
+    LOG.debug("Request to json URL: %s", url)
     response = requests.get(url)
     if response.status_code != requests.codes.ok:
         LOG.error("Request to %s: status %s", url, response.status_code)
         return None
+    LOG.debug("Received data: %s", response.text)
     return response.json()
 
 
@@ -96,6 +99,7 @@ def get_soup(url):
     """
     delay_fuzzy()
     response = requests.get(url)
+    LOG.debug("Request to html URL: %s", url)
     if response.status_code != requests.codes.ok:
         LOG.error("Request to %s: status %s", url, response.status_code)
         return None

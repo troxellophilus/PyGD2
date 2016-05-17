@@ -36,7 +36,7 @@ from pygd2 import db
 LOG_FMT = '%(levelname)s %(asctime)s %(module)s <%(lineno)d> %(message)s'
 logging.basicConfig(format=LOG_FMT)
 LOG = logging.getLogger(__name__)
-LOG.setLevel("debug")
+LOG.setLevel(logging.DEBUG)
 
 # Define MLB URL formatting strings
 GD_URL_PRE = "http://gd2.mlb.com/components/game/mlb/"

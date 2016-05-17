@@ -35,8 +35,8 @@ from pygd2 import db
 # Configure logger
 LOG_FMT = '%(levelname)s %(asctime)s %(module)s <%(lineno)d> %(message)s'
 logging.basicConfig(format=LOG_FMT)
-LOG = logging.getLogger('com.troxellophilus.pygd2')
-
+LOG = logging.getLogger(__name__)
+LOG.setLevel("debug")
 
 # Define MLB URL formatting strings
 GD_URL_PRE = "http://gd2.mlb.com/components/game/mlb/"
@@ -86,7 +86,7 @@ def get_json(url):
     if response.status_code != requests.codes.ok:
         LOG.error("Request to %s: status %s", url, response.status_code)
         return None
-    LOG.debug("Received data: %s", response.text)
+    LOG.debug("Received data: %s", response.text[100:])
     return response.json()
 
 

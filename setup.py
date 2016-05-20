@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "pygd2",
-    version = "0.3.1",
+    version = "0.3.2",
     author = "Drew Troxell",
     author_email = "troxellus@gmail.com",
     description = ("Simple library for querying MLB's GD2 data."),

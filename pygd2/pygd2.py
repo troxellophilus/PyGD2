@@ -1,6 +1,4 @@
 #!/usr/bin/python3
-
-
 """Copyright (C) 2015  Drew Troxell
 
 This program is free software: you can redistribute it and/or modify
@@ -17,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
+from collections import OrderedDict
 from datetime import datetime
 import logging
 import random
@@ -31,7 +29,6 @@ import requests
 
 from pygd2 import db
 
-
 # Configure logger
 LOG_FMT = '%(levelname)s %(asctime)s %(module)s <%(lineno)d> %(message)s'
 logging.basicConfig(format=LOG_FMT)
@@ -44,7 +41,6 @@ GD_DATE_FMT = "year_{}/month_{:02}/day_{:02d}/"
 
 M_URL_PRE = "http://m.mlb.com/lookup/json/"
 M_STAT_FMT = "named.sport_{}_composed.bam?player_id={}&game_type=%27R%27&league_list_id=%27mlb%27&season={}"
-
 
 # Set randomized delay range in seconds
 DELAY_MIN = 0.5
@@ -163,7 +159,8 @@ def get_color_feed(game_pk):
     Returns:
         Parsed JSON feed.
     """
-    url = "http://statsapi.mlb.com/api/v1/game/%s/feed/color.json" % str(game_pk)
+    url = "http://statsapi.mlb.com/api/v1/game/%s/feed/color.json" % str(
+        game_pk)
     return get_json(url)
 
 
@@ -198,10 +195,8 @@ def update_gameday_ids(year, month, day):
     for url in players_xml_urls:
         players = get_player_attribs(url)
         for player in players:
-            for_team, _ = db.Team.create_or_get(
-                gdid=player['team_id'],
-                abbrev=player['team_abbrev']
-            )
+            for_team, _ = db.Team.create_or_get(gdid=player['team_id'],
+                                                abbrev=player['team_abbrev'])
             db_player, created = db.Player.create_or_get(
                 firstname=player['first'],
                 lastname=player['last'],
@@ -213,8 +208,7 @@ def update_gameday_ids(year, month, day):
                 position=player['position'],
                 status=player['status'],
                 team=for_team,
-                date_modified=datetime.now()
-            )
+                date_modified=datetime.now())
             if not created:
                 db_player.gdid = player['id']
                 db_player.number = player['num']
@@ -244,7 +238,7 @@ def get_player_stats(type='hitting', player_id='', year=datetime.today().year):
     idx_composed = 'sport_{}_composed'.format(type)
     idx_agg = 'sport_{}_agg'.format(type)
     data = json[idx_composed][idx_agg]['queryResults']
-    if data['totalSize'] is '1': # TODO multi year in one request
+    if data['totalSize'] is '1':  # TODO multi year in one request
         return data['row']
     return {}
 
@@ -258,11 +252,15 @@ def get_player_by_name(first, last):
         The Player, or None if player isn't in the database.
     """
     try:
-        player = db.Player.get(firstname=first, lastname=last)
+        player = db.Player.select().where(
+            db.Player.firstname.contains(first),
+            db.Player.lastname.contains(last)).get()
     except db.Player.DoesNotExist:
         LOG.error("Player not in database.")
         return None
     else:
+        LOG.info("Retrieved player: %s",
+                 ' '.join([player.firstname, player.lastname]))
         return player
 
 
@@ -299,7 +297,8 @@ def get_player_stats_by_name(first, last, year):
     return get_player_stats('hitting', player.gdid, year)
 
 
-def get_pitching_stats_by_name(first, last, year, stats=[]): # TODO default stats
+def get_pitching_stats_by_name(first, last, year,
+                               stats=None):  # TODO default stats
     """Gets a player's pitching stats by name.
     Args:
         first: First name of the player.
@@ -313,15 +312,18 @@ def get_pitching_stats_by_name(first, last, year, stats=[]): # TODO default stat
     if player is None:
         return {}
     player_stats = get_player_stats('pitching', player.gdid, year)
+    if not stats:
+        stats = []
     stats_lower = [s.lower() for s in stats]
-    found_stats = {}
-    for abbrev, value in player_stats.items():
-        if abbrev.lower() in stats_lower:
-            found_stats[abbrev.upper()] = value
+    found_stats = OrderedDict()
+    for stat in stats_lower:
+        if stat in player_stats:
+            found_stats[stat.upper()] = player_stats[stat]
     return found_stats
 
 
-def get_batting_stats_by_name(first, last, year, stats=[]): # TODO default stats
+def get_batting_stats_by_name(first, last, year,
+                              stats=[]):  # TODO default stats
     """Gets a player's hitting stats by name.
     Args:
         first: First name of the player.
@@ -335,9 +337,11 @@ def get_batting_stats_by_name(first, last, year, stats=[]): # TODO default stats
     if player is None:
         return {}
     player_stats = get_player_stats('hitting', player.gdid, year)
+    if not stats:
+        stats = []
     stats_lower = [s.lower() for s in stats]
-    found_stats = {}
-    for abbrev, value in player_stats.items():
-        if abbrev.lower() in stats_lower:
-            found_stats[abbrev.upper()] = value
+    found_stats = OrderedDict()
+    for stat in stats_lower:
+        if stat in player_stats:
+            found_stats[stat.upper()] = player_stats[stat]
     return found_stats

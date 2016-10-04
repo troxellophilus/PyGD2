@@ -154,6 +154,24 @@ def get_game_attribs(date, team):
     return game_attribs
 
 
+def get_game_details(year, month, day):
+    gd_date = GD_DATE_FMT.format(year, month, day)
+    soup = get_soup(GD_URL_PRE + gd_date)
+    if soup is None:
+        return []
+    game_details = []
+    regex = r"gid_\d+_\d+_\d+_(\w+)mlb_(\w+)mlb_1/"
+    for link in soup.find_all('a'):
+        href = link.get('href')
+        res = re.match(regex, href)
+        if res:
+            json_url = GD_URL_PRE + gd_date + href + "linescore.json"
+            data = get_json(json_url)
+            if data:
+                game_details.append(data['data']['game'])
+    return game_details
+
+
 def get_color_feed(game_pk):
     """Gets color feed for a game.
     Args:

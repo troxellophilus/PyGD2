@@ -28,6 +28,7 @@ from pytz import timezone
 import requests
 
 from pygd2 import db
+from pygd2 import linescore
 
 # Configure logger
 LOG_FMT = '%(levelname)s %(asctime)s %(module)s <%(lineno)d> %(message)s'
@@ -44,7 +45,7 @@ M_STAT_FMT = "named.sport_{}_composed.bam?player_id={}&game_type=%27R%27&league_
 
 # Set randomized delay range in seconds
 DELAY_MIN = 0.5
-DELAY_MAX = 10
+DELAY_MAX = 5
 
 
 def delay_fuzzy():
@@ -124,6 +125,26 @@ def get_players_xml_urls(date):
     return players
 
 
+def game(gameday_id):
+    return linescore.Game(gameday_id)
+
+
+def list_games(date, team_code=None):
+    gd_date = GD_DATE_FMT.format(date.year, date.month, date.day)
+    soup = get_soup(GD_URL_PRE + gd_date)
+    if soup is None:
+        return []
+    games = []
+    regex = r"gid_(\d+_\d+_\d+_(\w+)mlb_(\w+)mlb_1/)"
+    for link in soup.find_all('a'):
+        href = link.get('href')
+        res = re.match(regex, href)
+        if res and (not team_code or (res.group(2) == team_code.lower() or res.group(3) == team_code.lower())):
+            gameday_id = res.group(1).rstrip('/')
+            games.append(game(gameday_id))
+    return games
+
+
 def get_game_attribs(date, team):
     """Gets game.xml attributes for a date and team.
     Args:
@@ -135,8 +156,7 @@ def get_game_attribs(date, team):
     if date is None:
         pacific = timezone('US/Pacific')
         date = datetime.datetime.now() + pacific.localize(
-            datetime.datetime.now()
-        ).utcoffset()
+            datetime.datetime.now()).utcoffset()
     gd_date = GD_DATE_FMT.format(date.year, date.month, date.day)
     soup = get_soup(GD_URL_PRE + gd_date)
     if soup is None:
@@ -180,8 +200,7 @@ def get_color_feed(game_pk):
         Parsed JSON feed.
     """
     url = "http://statsapi.mlb.com/api/v1/game/%s/feed/color.json" % str(
-        game_pk
-    )
+        game_pk)
     return get_json(url)
 
 
@@ -217,9 +236,7 @@ def update_gameday_ids(year, month, day):
         players = get_player_attribs(url)
         for player in players:
             for_team, _ = db.Team.create_or_get(
-                gdid=player['team_id'],
-                abbrev=player['team_abbrev']
-            )
+                gdid=player['team_id'], abbrev=player['team_abbrev'])
             db_player, created = db.Player.create_or_get(
                 firstname=player['first'],
                 lastname=player['last'],
@@ -231,8 +248,7 @@ def update_gameday_ids(year, month, day):
                 position=player['position'],
                 status=player['status'],
                 team=for_team,
-                date_modified=datetime.datetime.now()
-            )
+                date_modified=datetime.datetime.now())
             if not created:
                 db_player.gdid = player['id']
                 db_player.number = player['num']
@@ -246,11 +262,9 @@ def update_gameday_ids(year, month, day):
     return updated
 
 
-def get_player_stats(
-    type='hitting',
-    player_id='',
-    year=datetime.datetime.today().year
-):
+def get_player_stats(type='hitting',
+                     player_id='',
+                     year=datetime.datetime.today().year):
     """Gets the player's stats for a year.
     Args:
         type: String type of stats (hitting or pitching)
@@ -282,25 +296,21 @@ def get_player_by_name(first, last):
     try:
         player = db.Player.select().where(
             db.Player.firstname.contains(first),
-            db.Player.lastname.contains(last)
-        ).get()
+            db.Player.lastname.contains(last)).get()
     except db.Player.DoesNotExist:
         LOG.warning(
-            "Player not in database. Updating gameday ids and retrying."
-        )
+            "Player not in database. Updating gameday ids and retrying.")
         tdy = datetime.datetime.today()
         update_gameday_ids(tdy.year, tdy.month, tdy.day)
         try:
             player = db.Player.select().where(
                 db.Player.firstname.contains(first),
-                db.Player.lastname.contains(last)
-            ).get()
+                db.Player.lastname.contains(last)).get()
         except db.Player.DoesNotExist:
             LOG.error("Player not in database.")
             return None
-    LOG.info(
-        "Retrieved player: %s", ' '.join([player.firstname, player.lastname])
-    )
+    LOG.info("Retrieved player: %s",
+             ' '.join([player.firstname, player.lastname]))
     return player
 
 
@@ -315,8 +325,7 @@ def get_player_by_id(player_id):
         player = db.Player.get(gdid=player_id)
     except db.Player.DoesNotExist:
         LOG.warning(
-            "Player not in database. Updating gameday ids and retrying."
-        )
+            "Player not in database. Updating gameday ids and retrying.")
         tdy = datetime.datetime.today()
         update_gameday_ids(tdy.year, tdy.month, tdy.day)
         try:
@@ -344,9 +353,8 @@ def get_player_stats_by_name(first, last, year):
     return get_player_stats('hitting', player.gdid, year)
 
 
-def get_pitching_stats_by_name(
-    first, last, year, stats=None
-):  # TODO default stats
+def get_pitching_stats_by_name(first, last, year,
+                               stats=None):  # TODO default stats
     """Gets a player's pitching stats by name.
     Args:
         first: First name of the player.
@@ -370,9 +378,8 @@ def get_pitching_stats_by_name(
     return found_stats
 
 
-def get_batting_stats_by_name(
-    first, last, year, stats=[]
-):  # TODO default stats
+def get_batting_stats_by_name(first, last, year,
+                              stats=[]):  # TODO default stats
     """Gets a player's hitting stats by name.
     Args:
         first: First name of the player.

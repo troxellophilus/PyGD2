@@ -1,0 +1,465 @@
+# Based on Fustrate's data.yml file at https://github.com/Fustrate/mlb_gameday/blob/master/resources/data.yml
+
+---
+AL: &al !!python/object:pygd2.pygd2.LeagueInfo
+  name: American
+  divisions:
+    East: &aleast !!python/object:pygd2.pygd2.DivisionInfo
+      name: East
+      league: *al
+      id: 201
+      teams:
+        BAL: !!python/object:pygd2.pygd2.TeamInfo
+          name: Orioles
+          city: Baltimore
+          league: *al
+          division: *aleast
+          code: BAL
+          file_code: bal
+          id: 110
+          names:
+          - bal
+          - orioles
+          - oriole
+          - baltimore
+        BOS: !!python/object:pygd2.pygd2.TeamInfo
+          name: Red Sox
+          city: Boston
+          league: *al
+          division: *aleast
+          code: BOS
+          file_code: bos
+          id: 111
+          names:
+          - bos
+          - red sox
+          - redsox
+          - boston
+          - bosox
+        NYY: !!python/object:pygd2.pygd2.TeamInfo
+          name: Yankees
+          city: New York
+          league: *al
+          division: *aleast
+          code: NYY
+          file_code: nyy
+          id: 147
+          names:
+          - nyy
+          - yankees
+          - yankee
+          - new york yankees
+          - new york yankee
+        TB: !!python/object:pygd2.pygd2.TeamInfo
+          name: Rays
+          city: Tampa Bay
+          league: *al
+          division: *aleast
+          code: TB
+          file_code: tb
+          id: 139
+          names:
+          - tb
+          - rays
+          - ray
+          - devil rays
+          - devil ray
+          - tampa
+          - tampa bay
+        TOR: !!python/object:pygd2.pygd2.TeamInfo
+          name: Blue Jays
+          city: Toronto
+          league: *al
+          division: *aleast
+          code: TOR
+          file_code: tor
+          id: 141
+          names:
+          - tor
+          - blue jays
+          - blue jay
+          - bluejays
+          - bluejay
+          - jays
+          - jay
+          - toronto
+    Central: &alcentral !!python/object:pygd2.pygd2.DivisionInfo
+      name: Central
+      league: *al
+      id: 202
+      teams:
+        :CLE: !!python/object:pygd2.pygd2.TeamInfo
+          name: Indians
+          city: Cleveland
+          league: *al
+          division: *alcentral
+          code: CLE
+          file_code: cle
+          id: 114
+          names:
+          - cle
+          - indians
+          - indian
+          - cleveland
+        CWS: !!python/object:pygd2.pygd2.TeamInfo
+          name: White Sox
+          city: Chicago
+          league: *al
+          division: *alcentral
+          code: CWS
+          file_code: cws
+          id: 145
+          names:
+          - cws
+          - white sox
+          - chicago white sox
+        DET: !!python/object:pygd2.pygd2.TeamInfo
+          name: Tigers
+          city: Detroit
+          league: *al
+          division: *alcentral
+          code: DET
+          file_code: det
+          id: 116
+          names:
+          - det
+          - tigers
+          - tiger
+          - detroit
+        KC: !!python/object:pygd2.pygd2.TeamInfo
+          name: Royals
+          city: Kansas City
+          league: *al
+          division: *alcentral
+          code: KC
+          file_code: kc
+          id: 118
+          names:
+          - kc
+          - royals
+          - royal
+          - kansas city
+          - kansas
+        MIN: !!python/object:pygd2.pygd2.TeamInfo
+          name: Twins
+          city: Minnesota
+          league: *al
+          division: *alcentral
+          code: MIN
+          file_code: min
+          id: 142
+          names:
+          - min
+          - twins
+          - twin
+          - minnesota
+    West: &alwest !!python/object:pygd2.pygd2.DivisionInfo
+      name: West
+      league: *al
+      id: 200
+      teams:
+        :LAA: !!python/object:pygd2.pygd2.TeamInfo
+          name: Angels
+          city: Anaheim
+          league: *al
+          division: *alwest
+          code: LAA
+          file_code: ana
+          id: 108
+          names:
+          - ana
+          - angels
+          - angel
+          - anaheim
+          - ana
+          - los angeles angel
+          - los angeles angels
+          - la angels
+          - la angel
+          - laa
+          - laaa
+          - los angeles angels of anaheim
+        HOU: !!python/object:pygd2.pygd2.TeamInfo
+          name: Astros
+          city: Houston
+          league: *al
+          division: *alwest
+          code: HOU
+          file_code: hou
+          id: 117
+          names:
+          - hou
+          - astros
+          - astro
+          - houston
+        OAK: !!python/object:pygd2.pygd2.TeamInfo
+          name: Athletics
+          city: Oakland
+          league: *al
+          division: *alwest
+          code: OAK
+          file_code: oak
+          id: 133
+          names:
+          - oak
+          - athletics
+          - athletic
+          - as
+          - oakland
+        SEA: !!python/object:pygd2.pygd2.TeamInfo
+          name: Mariners
+          city: Seattle
+          league: *al
+          division: *alwest
+          code: SEA
+          file_code: sea
+          id: 136
+          names:
+          - sea
+          - mariners
+          - mariner
+          - seattle
+        TEX: !!python/object:pygd2.pygd2.TeamInfo
+          name: Rangers
+          city: Texas
+          league: *al
+          division: *alwest
+          code: TEX
+          file_code: tex
+          id: 140
+          names:
+          - tex
+          - rangers
+          - ranger
+          - texas
+NL: &nl !!python/object:pygd2.pygd2.LeagueInfo
+  name: National
+  divisions:
+    East: &nleast !!python/object:pygd2.pygd2.DivisionInfo
+      name: East
+      league: *nl
+      id: 204
+      teams:
+        ATL: !!python/object:pygd2.pygd2.TeamInfo
+          name: Braves
+          city: Atlanta
+          league: *nl
+          division: *nleast
+          code: ATL
+          file_code: atl
+          id: 144
+          names:
+          - atl
+          - braves
+          - brave
+          - atlanta
+        MIA: !!python/object:pygd2.pygd2.TeamInfo
+          name: Marlins
+          city: Miami
+          league: *nl
+          division: *nleast
+          code: MIA
+          file_code: mia
+          id: 146
+          names:
+          - mia
+          - marlins
+          - marlin
+          - miami
+          - florida
+        NYM: !!python/object:pygd2.pygd2.TeamInfo
+          name: Mets
+          city: New York
+          league: *nl
+          division: *nleast
+          code: NYM
+          file_code: nym
+          id: 121
+          names:
+          - nym
+          - mets
+          - met
+          - new york mets
+          - new york met
+        PHI: !!python/object:pygd2.pygd2.TeamInfo
+          name: Phillies
+          city: Philadelphia
+          league: *nl
+          division: *nleast
+          code: PHI
+          file_code: phi
+          id: 143
+          names:
+          - phi
+          - phillies
+          - phillie
+          - philly
+          - philadelphia
+        WSH: !!python/object:pygd2.pygd2.TeamInfo
+          name: Nationals
+          city: Washington
+          league: *nl
+          division: *nleast
+          code: WSH
+          file_code: was
+          id: 120
+          names:
+          - wsh
+          - nationals
+          - natinals
+          - national
+          - washington
+    Central: &nlcentral !!python/object:pygd2.pygd2.DivisionInfo
+      name: Central
+      league: *nl
+      id: 205
+      teams:
+        CHC: !!python/object:pygd2.pygd2.TeamInfo
+          name: Cubs
+          city: Chicago
+          league: *nl
+          division: *nlcentral
+          code: CHC
+          file_code: chc
+          id: 112
+          names:
+          - chc
+          - cubs
+          - cub
+          - chicago cubs
+          - chicago cub
+        CIN: !!python/object:pygd2.pygd2.TeamInfo
+          name: Reds
+          city: Cincinnati
+          league: *nl
+          division: *nlcentral
+          code: CIN
+          file_code: cin
+          id: 113
+          names:
+          - cin
+          - reds
+          - red
+          - cincinnati
+        MIL: !!python/object:pygd2.pygd2.TeamInfo
+          name: Brewers
+          city: Milwaukee
+          league: *nl
+          division: *nlcentral
+          code: MIL
+          file_code: mil
+          id: 158
+          names:
+          - mil
+          - brewers
+          - brewer
+          - milwaukee
+        PIT: !!python/object:pygd2.pygd2.TeamInfo
+          name: Pirates
+          city: Pittsburgh
+          league: *nl
+          division: *nlcentral
+          code: PIT
+          file_code: pit
+          id: 134
+          names:
+          - pit
+          - pirates
+          - pirate
+          - buccos
+          - bucco
+          - pittsburgh
+        STL: !!python/object:pygd2.pygd2.TeamInfo
+          name: Cardinals
+          city: St. Louis
+          league: *nl
+          division: *nlcentral
+          code: STL
+          file_code: stl
+          id: 138
+          names:
+          - stl
+          - cardinals
+          - cardinal
+          - st louis
+          - st. louis
+    West: &nlwest !!python/object:pygd2.pygd2.DivisionInfo
+      name: West
+      league: *nl
+      id: 203
+      teams:
+        ARI: !!python/object:pygd2.pygd2.TeamInfo
+          name: Diamondbacks
+          city: Arizona
+          league: *nl
+          division: *nlwest
+          code: ARI
+          file_code: ari
+          id: 109
+          names:
+          - ari
+          - diamondbacks
+          - diamondback
+          - dbacks
+          - dback
+          - arizona
+          - az
+        COL: !!python/object:pygd2.pygd2.TeamInfo
+          name: Rockies
+          city: Colorado
+          league: *nl
+          division: *nlwest
+          code: COL
+          file_code: col
+          id: 115
+          names:
+          - col
+          - rockies
+          - rockie
+          - colorado
+        LAD: !!python/object:pygd2.pygd2.TeamInfo
+          name: Dodgers
+          city: Los Angeles
+          league: *nl
+          division: *nlwest
+          code: LAD
+          file_code: la
+          id: 119
+          names:
+          - lad
+          - dodgers
+          - dodger
+          - los angeles
+          - la
+          - los angeles dodgers
+          - los angeles dodger
+          - la dodger
+          - la dodgers
+        SD: !!python/object:pygd2.pygd2.TeamInfo
+          name: Padres
+          city: San Diego
+          league: *nl
+          division: *nlwest
+          code: SD
+          file_code: sd
+          id: 135
+          names:
+          - sd
+          - padres
+          - padre
+          - san diego
+        SF: !!python/object:pygd2.pygd2.TeamInfo
+          name: Giants
+          city: San Francisco
+          league: *nl
+          division: *nlwest
+          code: SF
+          file_code: sf
+          id: 137
+          names:
+          - sf
+          - giants
+          - giant
+          - san fran
+          - san francisco
+          - gigantes

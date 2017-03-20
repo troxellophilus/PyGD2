@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import OrderedDict
 import datetime
 import logging
+import os.path
 import random
 import re
 import time
@@ -26,6 +27,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 from pytz import timezone
 import requests
+import yaml
 
 from pygd2 import db
 from pygd2 import linescore
@@ -139,7 +141,7 @@ def list_games(date, team_code=None):
     for link in soup.find_all('a'):
         href = link.get('href')
         res = re.match(regex, href)
-        if res and (not team_code or (res.group(2) == team_code.lower() or res.group(3) == team_code.lower())):
+        if res and (not team_code or (team_code.lower() in res.group(2) or team_code.lower() in res.group(3))):
             gameday_id = res.group(1).rstrip('/')
             games.append(game(gameday_id))
     return games
@@ -230,7 +232,6 @@ def update_gameday_ids(year, month, day):
     except ValueError:
         date = datetime.datetime.today()
     players_xml_urls = get_players_xml_urls(date)
-    db.opendb()
     updated = []
     for url in players_xml_urls:
         players = get_player_attribs(url)
@@ -258,7 +259,7 @@ def update_gameday_ids(year, month, day):
                 db_player.date_modified = datetime.datetime.now()
                 db_player.save()
             updated.append(db_player)
-    db.closedb()
+    db.database.commit()
     return updated
 
 
@@ -401,3 +402,78 @@ def get_batting_stats_by_name(first, last, year,
         if stat in player_stats:
             found_stats[stat.upper()] = player_stats[stat]
     return found_stats
+
+
+class MLBInfo(object):
+
+    def __init__(self, al_info, nl_info):
+        self.national = nl_info
+        self.american = al_info
+
+
+class LeagueInfo(object):
+
+    def __init__(self, name, divisions):
+        self.name = name
+        self.divisions = divisions
+
+
+class DivisionInfo(object):
+
+    def __init__(self, name, league, id, teams):
+        self.name = name
+        self.league = league
+        self.gdid = id
+        self.teams = teams
+
+
+class TeamInfo(object):
+
+    def __init__(self, name, city, league, division, code, file_code, id, names):
+        self.name = name
+        self.city = city
+        self.league = league
+        self.division = division
+        self.code = code
+        self.file_code = file_code
+        self.gdid = id
+        self.names = names
+
+
+def mlb_info():
+    with open(os.path.join(os.path.dirname(__file__), '../contrib/mlb.yml')) as mlbfp:
+        mlb = yaml.load(mlbfp.read())
+    return MLBInfo(mlb['AL'], mlb['NL'])
+
+
+def league_info(league):
+    mlb = mlb_info()
+    if league.lower() == 'american' or league.lower() == 'al':
+        return mlb.american
+    elif league.lower() == 'national' or league.lower() == 'nl':
+        return mlb.national
+    else:
+        raise ValueError("League %s not found." % league)
+
+
+def division_info(league, division):
+    league = league_info(league)
+    if division.lower() == 'east':
+        return league.divisions['East']
+    elif division.lower() == 'central':
+        return league.divisions['Central']
+    elif division.lower() == 'west':
+        return league.divisions['West']
+    else:
+        raise ValueError("Division %s not found." % division)
+
+
+def team_info(team_name):
+    mlb = mlb_info()
+    for league in [mlb.american, mlb.national]:
+        for division in league.divisions.values():
+            for team in division.teams.values():
+                if team_name.lower() == team.name.lower():
+                    return team
+    else:
+        raise ValueError("Team %s not found." % team_name)

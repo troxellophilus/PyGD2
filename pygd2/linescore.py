@@ -87,6 +87,17 @@ class Game(object):
 
     def reload(self):
         data = pygd2.get_json(self.gameday_url)['data']['game']
+        def _fix_dashes(data):
+            out = {}
+            for key, val in data.items():
+                if val == '-':
+                    out[key] = 0
+                elif isinstance(val, dict):
+                    out[key] = _fix_dashes(data[key])
+                else:
+                    out[key] = val
+            return out
+        data = _fix_dashes(data)
         self.game_type = data.get('game_type')
         self.double_header = data.get('double_header_sw') == 'Y'
         self.location = data.get('location')
@@ -102,13 +113,13 @@ class Game(object):
                                division=data.get('home_division'),
                                wins=int(data.get('home_win', 0)),
                                losses=int(data.get('home_loss', 0)),
-                               games_back=float(0 if data.get('home_games_back', 0) == '-' else data.get('home_games_back', 0)))
+                               games_back=float(data.get('home_games_back', 0)))
         self.away_team = _Team(abbrev=data.get('away_name_abbrev'),
                                name=data.get('away_team_name'),
                                division=data.get('away_division'),
                                wins=int(data.get('away_win', 0)),
                                losses=int(data.get('away_loss', 0)),
-                               games_back=float(0 if data.get('away_games_back', 0) == '-' else data.get('away_games_back', 0)))
+                               games_back=float(data.get('away_games_back', 0)))
         self.status = data.get('status')
         win = _Pitcher.from_mapping(data['winning_pitcher']) if data.get('winning_pitcher') else None
         loss = _Pitcher.from_mapping(data['losing_pitcher']) if data.get('losing_pitcher') else None
@@ -117,8 +128,8 @@ class Game(object):
                                 strikes=int(data.get('strikes', 0)),
                                 outs=int(data.get('outs', 0)),
                                 inning=int(data.get('inning', 0)),
-                                runs=(int(data.get('away_team_runs', 0)), int(data.get('home_team_runs'), 0)),
-                                hits=(int(data.get('away_team_hits', 0)), int(data.get('home_team_hits'), 0)),
+                                runs=(int(data.get('away_team_runs', 0)), int(data.get('home_team_runs', 0))),
+                                hits=(int(data.get('away_team_hits', 0)), int(data.get('home_team_hits', 0))),
                                 errors=(int(data.get('away_team_errors', 0)), int(data.get('home_team_errors', 0))),
                                 top=data.get('top_inning') == 'Y',
                                 win=win,
@@ -126,6 +137,8 @@ class Game(object):
                                 save=save,
                                 nono=data.get('is_no_hitter') == 'Y',
                                 perfect=data.get('is_perfect_game') == 'Y')
+        if isinstance(data.get('linescore'), dict):
+            data['linescore'] = [data['linescore']]
         self.linescore = [_LinescoreInning(int(l['inning'] or 0), int(l['away_inning_runs'] or 0), int(l['home_inning_runs'] or 0)) for l in data.get('linescore', [])]
         self.tiebreaker = data.get('tiebreaker_sw') == 'Y'
         self.game_pk = data.get('game_pk')

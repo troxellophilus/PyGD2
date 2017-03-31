@@ -238,7 +238,7 @@ def update_gameday_ids(year, month, day):
     for url in players_xml_urls:
         players = get_player_attribs(url)
         for player in players:
-            for_team, _ = db.Team.create_or_get(
+            for_team, _ = db.Team.get_or_create(
                 gdid=player['team_id'], abbrev=player['team_abbrev'])
             db_player, created = db.Player.create_or_get(
                 firstname=player['first'],

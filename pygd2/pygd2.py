@@ -240,7 +240,7 @@ def update_gameday_ids(year, month, day):
         for player in players:
             for_team, _ = db.Team.get_or_create(
                 gdid=player['team_id'], abbrev=player['team_abbrev'])
-            db_player, created = db.Player.create_or_get(
+            db_player, created = db.Player.get_or_create(
                 firstname=player['first'],
                 lastname=player['last'],
                 gdid=player['id'],

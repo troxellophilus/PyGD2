@@ -1,45 +1,38 @@
-from peewee import Model
-from peewee import SqliteDatabase
-from peewee import TextField
-from peewee import CharField
-from peewee import ForeignKeyField
-from peewee import DateTimeField
+import datetime
+
+import sssorm
+
+sssorm.connect_database('pygd2.db')
 
 
-database = SqliteDatabase('pygd2.db')
+def utc_now():
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
-class BaseModel(Model):
-    class Meta:
-        database = database
+class Team(sssorm.Model):
+    gdid = str
+    abbrev = str
+
+    def __init__(self, gdid, abbrev, **kwds):
+        super().__init__(gdid=gdid, abbrev=abbrev, **kwds)
 
 
-class Team(BaseModel):
-    gdid = TextField(index=True)
-    abbrev = TextField(unique=True)
+class Player(sssorm.Model):
+    gdid = str
+    firstname = str
+    lastname = str
+    number = int
+    boxname = str
+    throws = str
+    bats = str
+    position = str
+    status = str
+    team_idx = int
+    date_modified = datetime.datetime
 
-
-class Player(BaseModel):
-    gdid = TextField(index=True)
-    firstname = TextField(index=True)
-    lastname = TextField(index=True)
-    number = CharField()
-    boxname = TextField(index=True)
-    throws = CharField()
-    bats = CharField()
-    position = CharField(index=True)
-    status = CharField()
-    team = ForeignKeyField(Team, related_name='players')
-    date_modified = DateTimeField()
-
-
-def opendb():
-    database.connect()
-
-
-def closedb():
-    database.commit()
-    database.close()
-
-
-database.create_tables([Player, Team], safe=True)
+    def __init__(self, gdid, firstname, lastname, number, boxname, throws, bats,
+                 position, status, team, date_modified=utc_now, **kwds):
+        super().__init__(gdid=gdid, firstname=firstname, lastname=lastname,
+                         number=number, boxname=boxname, throws=throws, bats=bats,
+                         position=position, status=status, team_idx=int(team or 0),
+                         date_modified=date_modified, **kwds)

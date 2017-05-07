@@ -21,8 +21,9 @@ import logging
 import os.path
 import random
 import re
+import sqlite3
 import time
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ElementTree
 
 from bs4 import BeautifulSoup
 from pytz import timezone
@@ -31,6 +32,8 @@ import yaml
 
 from pygd2 import db
 from pygd2 import linescore
+from pygd2 import inning
+from pygd2 import gamefeed
 
 # Configure logger
 LOG_FMT = '%(levelname)s %(asctime)s %(module)s <%(lineno)d> %(message)s'
@@ -69,7 +72,7 @@ def get_xml(url):
     if response.status_code != requests.codes.ok:
         LOG.error("Request to %s: status %s", url, response.status_code)
         return None
-    return ET.fromstring(response.text)
+    return ElementTree.fromstring(response.text)
 
 
 def get_json(url):
@@ -87,7 +90,7 @@ def get_json(url):
         return None
     LOG.debug("Received data: %s", response.text[:100])
     if len(response.text) == 0:
-        return {}  
+        return {}
     return response.json()
 
 
@@ -131,6 +134,22 @@ def get_players_xml_urls(date):
 
 def game(gameday_id):
     return linescore.Game(gameday_id)
+
+
+def list_game_ids(date):
+    gd_date = GD_DATE_FMT.format(date.year, date.month, date.day)
+    soup = get_soup(GD_URL_PRE + gd_date)
+    if soup is None:
+        return []
+    games = []
+    regex = r"gid_(\d+_\d+_\d+_(\w+)mlb_(\w+)mlb_1/)"
+    for link in soup.find_all('a'):
+        href = link.get('href')
+        res = re.match(regex, href)
+        if res:
+            gameday_id = res.group(1).rstrip('/')
+            games.append(gameday_id)
+    return games
 
 
 def list_games(date, team_code=None):
@@ -238,30 +257,46 @@ def update_gameday_ids(year, month, day):
     for url in players_xml_urls:
         players = get_player_attribs(url)
         for player in players:
-            for_team, _ = db.Team.get_or_create(
-                gdid=player['team_id'], abbrev=player['team_abbrev'])
-            db_player, created = db.Player.get_or_create(
-                firstname=player['first'],
-                lastname=player['last'],
-                gdid=player['id'],
-                number=player['num'],
-                boxname=player['boxname'],
-                throws=player['rl'],
-                bats=player['bats'],
-                position=player['position'],
-                status=player['status'],
-                team=for_team,
-                date_modified=datetime.datetime.now())
-            if not created:
+            try:
+                for_team = db.Team.get_one(gdid=player['team_id'])
+            except sqlite3.OperationalError as err:
+                if 'no such table' in str(err):
+                    for_team = None
+                else:
+                    raise err
+            if not for_team:
+                for_team = db.Team(gdid=player['team_id'], abbrev=player['team_abbrev'])
+                for_team.create()
+            try:
+                db_player = db.Player.get_one(gdid=player['id'])
+            except sqlite3.OperationalError as err:
+                if 'no such table' in str(err):
+                    db_player = None
+                else:
+                    raise err
+            if not db_player:
+                db_player = db.Player(
+                    firstname=player['first'],
+                    lastname=player['last'],
+                    gdid=player['id'],
+                    number=player['num'],
+                    boxname=player['boxname'],
+                    throws=player['rl'],
+                    bats=player['bats'],
+                    position=player['position'],
+                    status=player['status'],
+                    team=for_team,
+                    date_modified=datetime.datetime.now())
+                db_player.create()
+            else:
                 db_player.gdid = player['id']
                 db_player.number = player['num']
                 db_player.position = player['position']
                 db_player.status = player['status']
                 db_player.team = for_team
-                db_player.date_modified = datetime.datetime.now()
-                db_player.save()
+                db_player.date_modified = datetime.datetime.now(datetime.timezone.utc)
+                db_player.update()
             updated.append(db_player)
-    db.database.commit()
     return updated
 
 
@@ -278,7 +313,7 @@ def get_player_stats(type='hitting',
     """
     url = M_URL_PRE + M_STAT_FMT.format(type, player_id, year)
     json = get_json(url)
-    if json == None:
+    if json is None:
         return {}
     idx_composed = 'sport_{}_composed'.format(type)
     idx_agg = 'sport_{}_agg'.format(type)
@@ -296,20 +331,14 @@ def get_player_by_name(first, last):
     Returns:
         The Player, or None if player isn't in the database.
     """
-    try:
-        player = db.Player.select().where(
-            db.Player.firstname.contains(first),
-            db.Player.lastname.contains(last)).get()
-    except db.Player.DoesNotExist:
+    player = db.Player.get_one(firstname=first, lastname=last)
+    if not player:
         LOG.warning(
             "Player not in database. Updating gameday ids and retrying.")
         tdy = datetime.datetime.today()
         update_gameday_ids(tdy.year, tdy.month, tdy.day)
-        try:
-            player = db.Player.select().where(
-                db.Player.firstname.contains(first),
-                db.Player.lastname.contains(last)).get()
-        except db.Player.DoesNotExist:
+        player = db.Player.get_one(firstname=first, lastname=last)
+        if not player:
             LOG.error("Player not in database.")
             return None
     LOG.info("Retrieved player: %s",
@@ -324,16 +353,14 @@ def get_player_by_id(player_id):
     Returns:
         The Player, or None if player isn't in the database.
     """
-    try:
-        player = db.Player.get(gdid=player_id)
-    except db.Player.DoesNotExist:
+    player = db.Player.get_one(gdid=player_id)
+    if not player:
         LOG.warning(
             "Player not in database. Updating gameday ids and retrying.")
         tdy = datetime.datetime.today()
         update_gameday_ids(tdy.year, tdy.month, tdy.day)
-        try:
-            player = db.Player.get(gdid=player_id)
-        except db.Player.DoesNotExist:
+        player = db.Player.get_one(gdid=player_id)
+        if not player:
             LOG.error("Player not in database.")
             return None
     return player
@@ -404,6 +431,23 @@ def get_batting_stats_by_name(first, last, year,
         if stat in player_stats:
             found_stats[stat.upper()] = player_stats[stat]
     return found_stats
+
+
+def _build_gameday_url(game_id, *args):
+    date_path = "year_{}/month_{}/day_{}".format(*game_id.split('_')[:3])
+    return '/'.join((GD_URL_PRE, date_path, 'gid_' + game_id, '/'.join(args)))
+
+
+def innings_all(game_id):
+    url = _build_gameday_url(game_id, 'inning', 'inning_all.xml')
+    xml = get_xml(url)
+    return inning.Game.from_etree(xml)
+
+
+def game_feed(game_pk):
+    url = "https://baseballsavant.mlb.com/gf?game_pk=%s" % game_pk
+    data = get_json(url)
+    return gamefeed.ExitVelocity(**data)
 
 
 class MLBInfo(object):
@@ -477,5 +521,4 @@ def team_info(team_name):
             for team in division.teams.values():
                 if team_name.lower() == team.name.lower():
                     return team
-    else:
-        raise ValueError("Team %s not found." % team_name)
+    raise ValueError("Team %s not found." % team_name)

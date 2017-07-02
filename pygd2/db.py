@@ -2,14 +2,19 @@ import datetime
 
 import sssorm
 
-sssorm.connect_database('pygd2.db')
-
 
 def utc_now():
     return datetime.datetime.now(datetime.timezone.utc)
 
 
-class Team(sssorm.Model):
+class BaseModel(sssorm.Model):
+    pass
+
+
+BaseModel.connect_database('pygd2.db')
+
+
+class Team(BaseModel):
     gdid = str
     abbrev = str
 
@@ -17,7 +22,7 @@ class Team(sssorm.Model):
         super().__init__(gdid=gdid, abbrev=abbrev, **kwds)
 
 
-class Player(sssorm.Model):
+class Player(BaseModel):
     gdid = str
     firstname = str
     lastname = str

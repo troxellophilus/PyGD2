@@ -446,8 +446,11 @@ def innings_all(game_id):
 
 def game_feed(game_pk):
     url = "https://baseballsavant.mlb.com/gf?game_pk=%s" % game_pk
-    data = get_json(url)
-    return gamefeed.ExitVelocity(**data)
+    data = get_json(url)['exit_velocity']
+    out = []
+    for mapping in data:
+        out.append(gamefeed.ExitVelocity(**mapping))
+    return out
 
 
 class MLBInfo(object):

@@ -1,11 +1,35 @@
 import json
 
+def _list_lits(alist):
+    out_list = []
+    for value in alist:
+        if isinstance(value, dict):
+            out_list.append(_dict_lits(value))
+        elif isinstance(value, list):
+            out_list.append(_list_lits(value))
+        elif isinstance(value, str):
+            try:
+                out_list.append(json.loads(value))
+            except json.JSONDecodeError:
+                out_list.append(str(value))
+        else:
+            out_list.append(str(value))
+    return out_list
+
+
 def _dict_lits(mapping):
     out = {}
     for key, val in mapping.items():
-        try:
-            out[key] = json.loads(val)
-        except json.JSONDecodeError:
+        if isinstance(val, dict):
+            out[key] = _dict_lits(val)
+        elif isinstance(val, list):
+            out[key] = _list_lits(val)
+        elif isinstance(val, str):
+            try:
+                out[key] = json.loads(val)
+            except json.JSONDecodeError:
+                out[key] = str(val)
+        else:
             out[key] = str(val)
     return out
 

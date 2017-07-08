@@ -41,3 +41,7 @@ class Player(BaseModel):
                          number=number, boxname=boxname, throws=throws, bats=bats,
                          position=position, status=status, team_idx=int(team or 0),
                          date_modified=date_modified, **kwds)
+
+    @property
+    def team(self):
+        return self.get_by_index(self.team_idx)

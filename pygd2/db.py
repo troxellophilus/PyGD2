@@ -45,3 +45,7 @@ class Player(BaseModel):
     @property
     def team(self):
         return self.get_by_index(self.team_idx)
+
+    @team.setter
+    def team(self, team):
+        self.team_idx = team.idx

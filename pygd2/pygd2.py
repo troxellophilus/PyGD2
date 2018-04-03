@@ -43,7 +43,7 @@ LOG.setLevel(logging.DEBUG)
 
 # Define MLB URL formatting strings
 GD_URL_PRE = "http://gd2.mlb.com/components/game/mlb/"
-GD_DATE_FMT = "year_{}/month_{:02}/day_{:02d}/"
+GD_DATE_FMT = "year_{}/month_{:02}/day_{:02d}"
 
 M_URL_PRE = "http://m.mlb.com/lookup/json/"
 M_STAT_FMT = "named.sport_{}_composed.bam?player_id={}&game_type=%27R%27&league_list_id=%27mlb%27&season={}"
@@ -127,7 +127,7 @@ def get_players_xml_urls(date):
     for link in soup.find_all('a'):
         href = link.get('href')
         if href.startswith("gid_"):
-            xml_url = GD_URL_PRE + gd_date + href + "players.xml"
+            xml_url = GD_URL_PRE + gd_date + '/' + href + "players.xml"
             players.append(xml_url)
     return players
 
@@ -190,7 +190,7 @@ def get_game_attribs(date, team):
         href = link.get('href')
         res = re.match(regex, href)
         if res and (team in res.group(1) or team in res.group(2)):
-            xml_url = GD_URL_PRE + gd_date + href + "game.xml"
+            xml_url = GD_URL_PRE + gd_date + '/' + href + "game.xml"
             xml = get_xml(xml_url)
             if xml:
                 game_attribs.append(xml.attrib)
@@ -208,7 +208,7 @@ def get_game_details(year, month, day):
         href = link.get('href')
         res = re.match(regex, href)
         if res:
-            json_url = GD_URL_PRE + gd_date + href + "linescore.json"
+            json_url = urlGD_URL_PRE + gd_date + '/' + href + "linescore.json"
             data = get_json(json_url)
             if data:
                 game_details.append(data['data']['game'])

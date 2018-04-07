@@ -145,6 +145,10 @@ def game(gameday_id):
     return linescore.Game(gameday_id)
 
 
+def game_context_metrics(game_pk):
+    return get_json("http://statsapi.mlb.com/api/v1/game/{}/contextMetrics".format(str(game_pk)))['game']
+
+
 def list_game_ids(date):
     gd_date = GD_DATE_FMT.format(date.year, date.month, date.day)
     soup = get_soup(GD_URL_PRE + gd_date)

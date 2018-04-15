@@ -15,9 +15,11 @@ setup(
     url = "http://github.com/DrewTroxell/PyGD2",
     install_requires=[
         "beautifulsoup4",
+        "defusedxml",
         "requests",
         "pytz",
-        "pyyaml"
+        "pyyaml",
+        "sssorm"
     ],
     packages=["pygd2"],
     long_description=read('README.md'),

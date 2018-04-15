@@ -134,7 +134,7 @@ def get_players_xml_urls(date):
         return []
     players = []
     for link in soup.find_all('a'):
-        href = link.get('href')
+        href = link.get('href')[7:]
         if href.startswith("gid_"):
             xml_url = GD_URL_PRE + gd_date + '/' + href + "players.xml"
             players.append(xml_url)
@@ -221,7 +221,7 @@ def get_game_details(year, month, day):
         href = link.get('href')
         res = re.match(regex, href)
         if res:
-            json_url = urlGD_URL_PRE + gd_date + '/' + href + "linescore.json"
+            json_url = GD_URL_PRE + gd_date + '/' + href + "linescore.json"
             data = get_json(json_url)
             if data:
                 game_details.append(data['data']['game'])
